@@ -1,0 +1,13 @@
+django==3.2.16
+asgiref==3.6.0
+pytz==2022.7
+sqlparse==0.4.3
+flake8==5.0.4
+psycopg2-binary==2.9.5
+python-dotenv==0.21.0
+Pillow==9.4.0
+django-colorfield==0.8.0
+djangorestframework==3.14.0
+djangorestframework-simplejwt==4.7.2
+drf-extra-fields==3.4.1
+django-filter==22.1
