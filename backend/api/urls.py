@@ -1,11 +1,9 @@
-from django.urls import include, path, re_path
-from djoser import views
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (IngredientViewSet, TagViewSet, RecipeViewSet,
-                    CartAPIView, FavoriteAPIView, SubscribeAPIView,
-                    SubscriptionAPIView, DownloadCartVAPIView)
-
+from .views import (CartAPIView, DownloadCartVAPIView, FavoriteAPIView,
+                    IngredientViewSet, RecipeViewSet, SubscribeCreateAPIView,
+                    SubscribeListAPIView, TagViewSet)
 
 app_name = 'api'
 router = DefaultRouter()
@@ -17,10 +15,7 @@ router.register('recipes', RecipeViewSet, basename='recipes')
 
 urlpatterns = [
     path('', include('djoser.urls')),
-    path("auth/token/login/", views.TokenCreateView.as_view(), name="login"),
-    path(
-        "auth/token/logout/", views.TokenDestroyView.as_view(), name="logout"
-    ),
+    path('auth/', include('djoser.urls.authtoken')),
     path(
         'recipes/<int:id>/shopping_cart/',
         CartAPIView.as_view(),
@@ -33,12 +28,12 @@ urlpatterns = [
     ),
     path(
         'users/<int:id>/subscribe/',
-        SubscribeAPIView.as_view(),
+        SubscribeCreateAPIView.as_view(),
         name='subscribe'
     ),
     path(
         'users/subscriptions/',
-        SubscriptionAPIView.as_view(),
+        SubscribeListAPIView.as_view(),
         name='subscriptions'
     ),
     path(
@@ -47,5 +42,4 @@ urlpatterns = [
         name='download_cart'
     ),
     path('', include(router.urls)),
-    # re_path(r'^auth/', include('djoser.urls.authtoken')),
 ]

@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 
 from users.models import User
+
 from .validators import validate_time
 
 
@@ -60,7 +61,7 @@ class Recipe(models.Model):
         Tag,
         verbose_name='Тэги',
         blank=True,
-        through='recipes.TagsInRecipes',
+        through='TagsInRecipes',
         related_name='recipes'
     )
     author = models.ForeignKey(
@@ -71,7 +72,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='recipes.IngredientInRecipe',
+        through='IngredientInRecipe',
         related_name='recipes',
     )
     pub_date = models.DateTimeField(auto_now_add=True)

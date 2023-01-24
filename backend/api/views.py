@@ -3,76 +3,30 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
-from .permissions import (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly,
-                          ReadOnly)
-from .serializers import (IngredientSerializer, CustomUserSerializer,
-                          AddRecipeSerializer, SubscribeSerializer,
-                          TagSerializer, CartSerializer, FavoriteSerializer,
-                          RecipeSerializer, SignUpSerializer,
-                          SubscriptionSerializer)
-from recipes.models import (Ingredient, IngredientInRecipe,
-                            Recipe, Tag, Cart, Favorite)
-from users.models import User, Subscribe
+from recipes.models import (Cart, Favorite, Ingredient, IngredientInRecipe,
+                            Recipe, Tag)
+from users.models import Subscribe, User
 
-
-class UserViewSet(ModelViewSet):
-    queryset = User.objects.all()
-    permission_classes = (
-        IsAuthenticatedOrReadOnly,
-    )
-    serializer_class = CustomUserSerializer
-    pagination_class = PageNumberPagination
-    filter_backends = (SearchFilter,)
-    search_fields = ('username',)
-    lookup_field = 'username'
-
-    @action(
-        detail=False,
-        methods=('GET', 'PATCH'),
-        url_path='me',
-        permission_classes=(IsAuthenticated,),
-    )
-    def me(self, request):
-        """Профайл пользователя."""
-        if request.method == 'GET':
-            serializer = CustomUserSerializer(request.user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        serializer = CustomUserSerializer(
-            request.user,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save(role=request.user.role)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class APISignup(APIView):
-    permission_classes = (AllowAny,)
-
-    def post(self, request):
-        """Создание и отправка."""
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from .filters import IngredientFilter, RecipeFilter
+from .permissions import IsAuthorOrReadOnly, ReadOnly
+from .serializers import (CartSerializer, FavoriteSerializer,
+                          IngredientSerializer, RecipeCreateSerializer,
+                          RecipeSerializer, SubscribeCreateSerializer,
+                          SubscriptionSerializer, TagSerializer)
 
 
 class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (ReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    search_fields = ['^name']
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = IngredientFilter
 
 
 class TagViewSet(ModelViewSet):
@@ -84,11 +38,14 @@ class TagViewSet(ModelViewSet):
 
 class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RecipeFilter
+
 
     def get_serializer_class(self):
         if self.request.method in ['POST', 'PATCH']:
-            return AddRecipeSerializer
+            return RecipeCreateSerializer
         return RecipeSerializer
 
 
@@ -162,22 +119,21 @@ class DownloadCartVAPIView(APIView):
                             filename='Ingredients_in_cart.txt')
 
 
-class SubscriptionAPIView(APIView):
+class SubscribeListAPIView(APIView):
     queryset = Subscribe.objects.all()
     serializer_class = SubscriptionSerializer
 
     def get_queryset(self):
         user = self.request.user
-        new_queryset = User.objects.all().filter(author__user=user)
+        new_queryset = User.objects.all().filter(following_author__user=user)
         return new_queryset
 
 
-class SubscribeAPIView(APIView):
+class SubscribeCreateAPIView(APIView):
 
     def post(self, request, id):
-        user_id = request.user.id
-        data = {'user': user_id, 'author': id}
-        serializer = SubscribeSerializer(
+        data = {'user': request.user.id, 'author': id}
+        serializer = SubscribeCreateSerializer(
             data=data, context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
@@ -187,7 +143,7 @@ class SubscribeAPIView(APIView):
     def delete(self, request, id):
         user = request.user
         author = get_object_or_404(User, id=id)
-        deleting_obj = Subscribe.objects.all().filter(
+        deleting_obj = Subscribe.objects.filter(
             user=user, author=author
         )
         if not deleting_obj:
