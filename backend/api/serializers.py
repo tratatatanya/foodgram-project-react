@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework.serializers import (IntegerField, ModelSerializer,
@@ -6,7 +7,7 @@ from rest_framework.serializers import (IntegerField, ModelSerializer,
 from rest_framework.validators import UniqueTogetherValidator, ValidationError
 
 from recipes.models import (Cart, Favorite, Ingredient, IngredientInRecipe,
-                            Recipe, Tag, TagsInRecipes)
+                            Recipe, Tag, TagInRecipe)
 from users.models import Subscribe, User
 
 
@@ -157,23 +158,17 @@ class RecipeCreateSerializer(ModelSerializer):
         return recipe
 
     def update(self, recipe, validated_data):
-        recipe.name = validated_data.get('name', recipe.name)
-        recipe.text = validated_data.get('text', recipe.text)
-        recipe.image = validated_data.get('image', recipe.image)
-        recipe.cooking_time = validated_data.get(
-            'cooking_time', recipe.cooking_time
-        )
         tags = validated_data.pop('tags')
-        recipe.tags.set(tags) if tags else None
         ingredients = validated_data.pop('ingredients')
+        super().update(recipe, validated_data)
         recipe.ingredients.clear()
         self.add_ingredients(ingredients, recipe)
-        recipe.save()
+        recipe.tags.set(tags) if tags else None
         return recipe
 
     def validate(self, data):
-        ingredients = self.initial_data.get("ingredients")
-        if ingredients == []:
+        ingredients = data.get("ingredients")
+        if not ingredients:
             raise ValidationError(
                 {"Ошибка": "Необходимо выбрать хотя бы один ингредиент"}
             )
@@ -242,15 +237,13 @@ class RecipeInSubscriptionsSerializer(ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = fields
 
 
 class SubscriptionSerializer(ModelSerializer):
-    recipes = SerializerMethodField()
+    recipes = RecipeInSubscriptionsSerializer(many=True)
+    recipes_count = SerializerMethodField()
     is_subscribed = SerializerMethodField()
-    recipes_count = IntegerField(
-        source='recipes.count',
-        read_only=True
-    )
 
     class Meta:
         model = User
@@ -258,25 +251,30 @@ class SubscriptionSerializer(ModelSerializer):
                   'last_name', 'is_subscribed', 'recipes', 'recipes_count',)
         read_only_fields = fields
 
-    def get_recipes(self, instance):
-        context = {'request': self.context.get('request')}
-        recipes = instance.recipes.all()
-        return RecipeInSubscriptionsSerializer(
-            recipes, context=context, many=True
-        ).data
+    def get_recipes_count(self, instance):
+        author = get_object_or_404(User, username=instance.username)
+        return Recipe.objects.filter(author=author).count()
+
+    # def get_recipes(self, instance):
+    #     context = {'request': self.context.get('request')}
+    #     recipes = instance.recipes.all()
+    #     return RecipeInSubscriptionsSerializer(
+    #         recipes, context=context, many=True
+    #     ).data
 
     def get_is_subscribed(self, instance):
-        request = self.context.get('request')
-        if request.user.is_anonymous:
-            return False
-        user = request.user
-        is_subscribed = instance.subscriber.filter(user=instance, author=user)
-        return is_subscribed.exists()
+        return True
+        # request = self.context.get('request')
+        # if request.user.is_anonymous:
+        #     return False
+        # user = request.user
+        # is_subscribed = instance.subscriber.filter(user=instance, author=user)
+        # return is_subscribed.exists()
 
 
 class SubscribeCreateSerializer(ModelSerializer):
-    user = PrimaryKeyRelatedField(queryset=User.objects.all())
-    author = PrimaryKeyRelatedField(queryset=User.objects.all())
+    # user = PrimaryKeyRelatedField(queryset=User.objects.all())
+    # author = PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = Subscribe

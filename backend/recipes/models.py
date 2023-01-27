@@ -4,7 +4,6 @@ from django.db import models
 from django.db.models import UniqueConstraint
 
 from users.models import User
-
 from .validators import validate_time
 
 
@@ -34,12 +33,12 @@ class Ingredient(models.Model):
         blank=False
     )
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -61,7 +60,7 @@ class Recipe(models.Model):
         Tag,
         verbose_name='Тэги',
         blank=True,
-        through='TagsInRecipes',
+        through='TagInRecipe',
         related_name='recipes'
     )
     author = models.ForeignKey(
@@ -77,34 +76,46 @@ class Recipe(models.Model):
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
-    def display_tags(self):
-        return ', '.join([tag.name for tag in self.tags.all()])
-    display_tags.short_description = 'Тэги'
-
-    def display_ingredients(self):
-        return ', '.join([ingredient.name for ingredient in self.ingredients.all()])
-    display_ingredients.short_description = 'Ингредиенты'
-
-    def __str__(self):
-        return self.name
-
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
+    def __str__(self):
+        return self.name
 
-class TagsInRecipes(models.Model):
+    def display_tags(self):
+        tags = self.tags.values_list('name')
+        return ', '.join(tags)
+    display_tags.short_description = 'Тэги'
+
+    def display_ingredients(self):
+        ingredients = list(self.ingredients.values_list('name'))
+        return ingredients
+    display_ingredients.short_description = 'Ингредиенты'
+
+
+class TagInRecipe(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         related_name='recipe_tags',
         on_delete=models.CASCADE,
     )
-    tags = models.ForeignKey(
+    tag = models.ForeignKey(
         Tag,
         related_name='recipe_tags',
         on_delete=models.DO_NOTHING
     )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=['tag', 'recipe'],
+                name='tag_in_recipe_unique'
+            )
+        ]
+        verbose_name = 'Тэг в рецепте'
+        verbose_name_plural = 'Тэги в рецепте'
 
 
 class IngredientInRecipe(models.Model):
@@ -128,6 +139,12 @@ class IngredientInRecipe(models.Model):
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
+        constraints = [
+            UniqueConstraint(
+                fields=['ingredient', 'recipe'],
+                name='ingredient_in_recipe_unique'
+            )
+        ]
 
 
 class Favorite(models.Model):
@@ -147,7 +164,8 @@ class Favorite(models.Model):
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields=['user', 'recipe'], name='recipe_in_favorite_unique'
+                fields=['user', 'recipe'],
+                name='recipe_in_favorite_unique'
             )
         ]
         verbose_name = 'Избранное'
@@ -171,7 +189,8 @@ class Cart(models.Model):
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields=['user', 'recipe'], name='recipe_in_shopping_cart'
+                fields=['user', 'recipe'],
+                name='recipe_in_shopping_cart'
             )
         ]
         verbose_name = 'Список покупок'

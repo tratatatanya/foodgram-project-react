@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (Cart, Ingredient, IngredientInRecipe, Recipe, Tag,
-                     TagsInRecipes)
+                     TagInRecipe)
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -21,7 +21,7 @@ class IngredientInRecipeAdmin(admin.ModelAdmin):
 
 
 class TagsInLine(admin.StackedInline):
-    model = TagsInRecipes
+    model = TagInRecipe
 
 
 class IngredientsInLine(admin.StackedInline):

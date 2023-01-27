@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (CartAPIView, DownloadCartVAPIView, FavoriteAPIView,
                     IngredientViewSet, RecipeViewSet, SubscribeCreateAPIView,
-                    SubscribeListAPIView, TagViewSet)
+                    SubscribeListViewSet, TagViewSet)
 
 app_name = 'api'
 router = DefaultRouter()
@@ -33,7 +33,7 @@ urlpatterns = [
     ),
     path(
         'users/subscriptions/',
-        SubscribeListAPIView.as_view(),
+        SubscribeListViewSet.as_view({'get': 'list'}),
         name='subscriptions'
     ),
     path(
