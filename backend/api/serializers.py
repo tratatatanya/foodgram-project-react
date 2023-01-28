@@ -255,26 +255,11 @@ class SubscriptionSerializer(ModelSerializer):
         author = get_object_or_404(User, username=instance.username)
         return Recipe.objects.filter(author=author).count()
 
-    # def get_recipes(self, instance):
-    #     context = {'request': self.context.get('request')}
-    #     recipes = instance.recipes.all()
-    #     return RecipeInSubscriptionsSerializer(
-    #         recipes, context=context, many=True
-    #     ).data
-
     def get_is_subscribed(self, instance):
         return True
-        # request = self.context.get('request')
-        # if request.user.is_anonymous:
-        #     return False
-        # user = request.user
-        # is_subscribed = instance.subscriber.filter(user=instance, author=user)
-        # return is_subscribed.exists()
 
 
 class SubscribeCreateSerializer(ModelSerializer):
-    # user = PrimaryKeyRelatedField(queryset=User.objects.all())
-    # author = PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
         model = Subscribe

@@ -17,7 +17,7 @@ def custom_delete(request, id, model):
     user = request.user
     recipe = get_object_or_404(Recipe, id=id)
     deleting_obj = model.objects.filter(user=user, recipe=recipe)
-    if not deleting_obj:
+    if not deleting_obj.exists():
         return Response(status=status.HTTP_400_BAD_REQUEST)
     deleting_obj.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
