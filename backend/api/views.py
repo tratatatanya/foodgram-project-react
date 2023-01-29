@@ -3,8 +3,8 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -60,6 +60,10 @@ class FavoriteAPIView(APIView):
 
 
 class CartAPIView(APIView):
+    pagination_class = PageNumberPagination
+
+    def get(self, request):
+        return Cart.objects.filter(user=request.user)
 
     def post(self, request, id):
         return custom_post(request, id, CartSerializer)
@@ -110,24 +114,23 @@ class DownloadCartVAPIView(APIView):
 class SubscribeListViewSet(ModelViewSet):
     queryset = Subscribe.objects.all()
     serializer_class = SubscriptionSerializer
-    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         user = self.request.user
-        new_queryset = User.objects.filter(following_author__user=user)
-        return new_queryset
+        return User.objects.filter(following_author__user=user)
 
 
 class SubscribeCreateAPIView(APIView):
 
     def post(self, request, id):
-        user = get_object_or_404(User, username=request.user)
-        author = get_object_or_404(User, pk=id)
-        serializer = SubscribeCreateSerializer(data={"user": user.id, "author": id})
+        user = request.user
+        serializer = SubscribeCreateSerializer(
+            data={"user": user.id, "author": id},
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        author_serializer = SubscriptionSerializer(author)
-        return Response(author_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, id):
         user = request.user
@@ -135,7 +138,7 @@ class SubscribeCreateAPIView(APIView):
         deleting_obj = Subscribe.objects.filter(
             user=user, author=author
         )
-        if not deleting_obj.exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        deleting_obj.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if deleting_obj.exists():
+            deleting_obj.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
