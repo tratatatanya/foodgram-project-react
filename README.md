@@ -1,5 +1,8 @@
+[![Django-app workflow](https://github.com/tratatatanya/foodgram-project-react/actions/workflows/main.yml/badge.svg)](https://github.com/tratatatanya/foodgram-project-react/actions/workflows/main.yml)
+
 # Проект Foodgram
 
+http://84.252.136.202/recipes
 
 ## Описание
 
@@ -42,3 +45,40 @@ Cайт Foodgram - онлайн-сервис, на котором пользов
 - редактировать/удалять любые рецепты,
 - добавлять/удалять/редактировать ингредиенты.
 - добавлять/удалять/редактировать теги.
+
+### Как запустить проект:
+
+Клонировать репозиторий и перейти в него в командной строке:
+
+```
+git clone https://github.com/tratatatanya/foodgram-project-react.git
+```
+
+```
+cd foodgram-project-react/infra/
+```
+
+Установить docker и docker-compose:
+
+```
+sudo apt update
+sudo install docker
+sudo install docker-compose
+```
+
+
+Запустить сборку контейнеров docker-compose:
+
+```
+docker-compose up -d --build
+```
+
+### Заполнение базы данными
+
+```
+`docker-compose exec web python manage.py loaddata dump.json `
+```
+
+### Автор
+
+[Татьяна Говорина](https://github.com/tratatatanya)
