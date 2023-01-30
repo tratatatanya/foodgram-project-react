@@ -3,8 +3,8 @@ from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework.serializers import (IntegerField, ModelSerializer,
                                         PrimaryKeyRelatedField, ReadOnlyField,
-                                        SerializerMethodField)
-from rest_framework.validators import UniqueTogetherValidator, ValidationError
+                                        SerializerMethodField, ValidationError)
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import (Cart, Favorite, Ingredient, IngredientInRecipe,
                             Recipe, Tag, TagInRecipe)
@@ -168,13 +168,13 @@ class RecipeCreateSerializer(ModelSerializer):
         ingredients = data.get("ingredients")
         if not ingredients:
             raise ValidationError(
-                {"Ошибка": "Необходимо выбрать хотя бы один ингредиент"}
+                "Необходимо выбрать хотя бы один ингредиент"
             )
         for ingredient in ingredients:
             if ingredients.count(ingredient) > 1:
-                id = ingredient["id"]
-                name = Ingredient.objects.all().get(id=id).name
-                raise ValidationError({f"{name}": f"{name} уже есть в списке"})
+                raise ValidationError('Ингредиент уже есть в списке')
+        if [item for item in ingredients if item['amount'] < 1]:
+            raise ValidationError('Минимальное количество ингредиента 1')
         return data
 
     def to_representation(self, recipe):
