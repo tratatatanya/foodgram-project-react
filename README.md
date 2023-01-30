@@ -76,7 +76,7 @@ docker-compose up -d --build
 ### Заполнение базы данными
 
 ```
-`docker-compose exec web python manage.py loaddata dump.json `
+docker-compose exec web python manage.py loaddata dump.json
 ```
 
 ### Автор

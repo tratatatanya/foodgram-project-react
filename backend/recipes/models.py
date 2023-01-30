@@ -85,8 +85,8 @@ class Recipe(models.Model):
         return self.name
 
     def display_tags(self):
-        tags = self.tags.values_list('name')
-        return ', '.join(tags)
+        tags = list(self.tags.values_list('name'))
+        return tags
     display_tags.short_description = 'Тэги'
 
     def display_ingredients(self):
