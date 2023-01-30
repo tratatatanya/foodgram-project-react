@@ -79,6 +79,10 @@ docker-compose up -d --build
 docker-compose exec web python manage.py loaddata dump.json
 ```
 
+### Вход в админ-зону
+
+Логин: admin; пароль: admin.
+
 ### Автор
 
 [Татьяна Говорина](https://github.com/tratatatanya)
